@@ -168,11 +168,12 @@ From a few weeks of these you can forecast honestly and probabilistically:
 throughput, lands in roughly X–Y weeks." That's a range leadership can trust,
 and it needs no per-card time guess.
 
-## Cold-start bands (provisional — delete once you have flow data)
+## Cold-start bands (a mental reference only — never written to the card)
 
-Before there's any cycle-time history, you still sometimes need a rough time for a
-card. Use these **provisional** bands — and retire them the moment real data
-exists:
+Before there's any cycle-time history, you sometimes want a rough feel for how long a
+point value tends to take. Use these **provisional** bands as a private sanity-check —
+**do not write them onto cards** (no per-card Time Estimate), and retire them entirely
+the moment real cycle-time data exists:
 
 | Points | Rough focused effort | Rough calendar |
 | --- | --- | --- |
@@ -286,8 +287,11 @@ So estimates have somewhere to land:
 1. **Story Points** — a *Number* custom field on the list (Fibonacci values only).
    Custom fields can't be created through the API/MCP, so add this once in the
    ClickUp UI. Until it exists, the estimate is written into the card body.
-2. **Time Estimate** — ClickUp's native field (settable via the API), used only
-   for the provisional cold-start band.
+2. **Time Estimate (native field) — leave it unset.** Don't put a per-card time on
+   cards. Time is forecast in aggregate from flow (cycle time + throughput), not from
+   points. The cold-start band is a rough mental sanity-check only, never written to
+   the card — a per-card points→time value just recreates hour-estimating and poisons
+   the flow data.
 3. *(optional)* **Confidence** — a dropdown (High / Medium / Low).
 4. Tag anything that sized **> 13** `needs-breakdown` and route it before
    committing.

@@ -89,16 +89,17 @@ If a slice's only job is to *remove uncertainty* (research/decision), make it a
 - Apply the security-area rule in **both** modes — a quick estimate doesn't get to skip
   the "security work is never small" rule.
 
-### 5. Resolve to a point value and a provisional band
-Match to the nearest reference story → Fibonacci number. Time is a **provisional
-cold-start band** only (`1→≤1h · 3→2-4h · 5→½-1d · 8→1-2d · 13→3-5d`); the real
-forecast is flow (cycle time / throughput), so don't over-invest in the band.
+### 5. Resolve to a point value (points only — no per-card time)
+Match to the nearest reference story → Fibonacci number. **Do not assign a per-card time
+estimate.** Time is forecast separately, in aggregate, from flow (cycle time /
+throughput). A rough band (`1→≤1h … 13→3-5d`) is a mental sanity-check only — never
+write it to the card.
 
 ### 6. Emit one block per card (exact shape)
 
 ```
 ## <Card title — verb + object>
-- Story Points: <Fib>   Provisional band: <band>   Confidence: <High|Medium|Low>
+- Story Points: <Fib>   Confidence: <High|Medium|Low>
 - Sizing: U=<1-3> C=<1-3> V=<1-3> → <Fib>  (nearest reference: "<anchor>")
 - Touches: <files/layers found in the repo, or "not inspected">
 - Description: <2-4 plain sentences anyone can read>
@@ -126,11 +127,12 @@ dependencies correct? split or merge any? Iterate until approved. **Never publis
 unapproved cards.**
 
 ### 8. Publish to ClickUp
-For each approved card: `clickup_create_task` in the matching List, set the native
-**Time Estimate** (provisional band), put Description + Acceptance criteria in the body
-(with the Story Points line), and set the **Story Points** custom field if it exists.
-Tag `needs-breakdown` and ask first before creating any card that sized > 13. Report
-created task IDs and URLs.
+For each approved card: `clickup_create_task` in the matching List, set the **Story
+Points** custom field (field id from the project's anchors.md), and put Description +
+Acceptance criteria in the body. **Do not set the native Time Estimate** — time is
+forecast from flow (cycle time / throughput), not assigned per card. Tag
+`needs-breakdown` and ask first before creating any card that sized > 13. Report created
+task IDs and URLs.
 
 ## Mid-flight re-estimation
 If a card turns out bigger than sized, **don't change the original number** — log the
