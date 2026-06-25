@@ -78,12 +78,22 @@ up — the blend is resolved by matching to the nearest reference story (below).
 | **Complexity** — how tricky is the thinking, and how much must be verified/trusted? | Mechanical, one obvious way | Some real logic / a design choice | Intricate logic, interacting parts, or a large surface to verify | **The code** |
 | **Volume** — how much surface area? | One spot | A few files / one layer | Many files across layers (e.g. UI + service + DB + tests) | **The code** |
 
-Uncertainty is the axis a non-technical requester genuinely knows ("is the spec
-clear? do we have the asset?"). Complexity and Volume need the codebase — so the
-estimating agent reads the repo (greps for the files/layers a card will touch) and
-derives them from the real fan-out. **If the code can't be inspected, Volume and
-Complexity are an estimate-from-description and the card is marked Confidence:
-Low.**
+Uncertainty is the axis anyone can judge from the request ("is the spec clear? do we
+have the asset?"). Complexity and Volume are about the code — and there's an **explicit
+choice** of how deep to go, made per estimation run:
+
+- **Quick (description-only)** — score Complexity/Volume from the request text alone.
+  Fast, no code dive. The right default when whoever's estimating doesn't want to get
+  into the code, or for a rough first pass. These cards are capped at **Confidence:
+  Medium** and tagged `desc-only`, and any non-trivial one (≥ 5, or security-sensitive)
+  is routed to a developer to confirm.
+- **Code-inspected** — the estimating agent reads the repo (greps the files/layers a
+  card touches) and derives Complexity/Volume from the real fan-out. Slower, higher
+  confidence. The default when a developer is estimating or accuracy matters.
+
+Neither is "correct" — it's a speed-vs-confidence trade the estimator picks up front.
+A non-technical person can always choose Quick and let a developer refine the flagged
+cards; nobody is forced into the code.
 
 The "how much must be verified/trusted" clause in Complexity is where the AI
 caveat lives: a card where a lot of generated code lands in a sensitive area is

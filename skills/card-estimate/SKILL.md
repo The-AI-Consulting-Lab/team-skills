@@ -27,6 +27,9 @@ flag, never committed). Points = a *blend* of three axes (not a sum):
 - **Complexity** (1–3) — judged from the **code**: 1 mechanical · 2 real logic / a design choice · 3 intricate, or a large surface to verify/trust.
 - **Volume** (1–3) — judged from the **code**: 1 one spot · 2 a few files / one layer · 3 many files across layers.
 
+Complexity and Volume can be scored two ways — see step 0. Quick mode reads them from
+the description; code-inspected mode reads them from the repo.
+
 Resolve by matching to the nearest **reference story**, rounding to nearest (not up).
 If riskier than the nearest anchor, pick the higher candidate — don't add a step.
 
@@ -40,6 +43,21 @@ by the verify-and-integrate surface.
 storage/signed URLs, payments, migrations → Complexity ≥ 2, Confidence ≤ Medium.
 
 ## Process
+
+### 0. Choose the estimation mode (ask up front, make it explicit)
+There are two ways to score Complexity and Volume. **This is a real choice — surface
+it; don't just default to digging through the code**, because not everyone wants to.
+
+- **Quick (description-only)** — size from the request text alone. Fast, no code dive.
+  For a non-technical requester, or a rough first pass. Complexity/Volume are read from
+  the description; **Confidence is capped at Medium**, and the card is tagged
+  `desc-only` so a developer can refine it later.
+- **Code-inspected** — read the repo to derive Complexity/Volume from the real files.
+  Slower, higher confidence. The default when a developer estimates or accuracy matters.
+
+If the user hasn't said which, **ask** (one line: "quick estimate from the description,
+or should I read the code?"). A non-technical user can always pick Quick and hand the
+flagged cards to a dev.
 
 ### 1. Load this project's calibration
 Look for `docs/estimation/anchors.md` (or `**/anchors.md`) in the repo: it holds the
@@ -60,13 +78,16 @@ it touches and is verifiable on its own. Every card ≤ 8 points; split anything
 If a slice's only job is to *remove uncertainty* (research/decision), make it a
 **spike**: timebox it, don't point it.
 
-### 4. Score each card — READ THE REPO
-- **Uncertainty:** from the request.
-- **Complexity & Volume:** grep/Read the repo to find the files and layers this card
-  will actually touch; derive the scores from that real fan-out, not the wording of
-  the request. **If you cannot inspect the repo, set Confidence: Low and say Volume/
-  Complexity are estimated from the description.**
-- Apply the security-area rule.
+### 4. Score each card (per the mode from step 0)
+- **Uncertainty:** always from the request.
+- **Complexity & Volume:**
+  - *Code-inspected mode* — grep/Read the repo for the files and layers this card will
+    actually touch; derive the scores from that real fan-out, not the wording.
+  - *Quick mode* — estimate them from the description; cap **Confidence at Medium** and
+    tag the card `desc-only`. (Same if code-inspected mode was chosen but the repo
+    can't be read.)
+- Apply the security-area rule in **both** modes — a quick estimate doesn't get to skip
+  the "security work is never small" rule.
 
 ### 5. Resolve to a point value and a provisional band
 Match to the nearest reference story → Fibonacci number. Time is a **provisional
@@ -96,7 +117,8 @@ Footer:
 
 **Routing triggers** (don't rely on self-assessed confidence): route a card if ANY of
 — points ≥ 8 · Confidence Low · touches a security-sensitive area · spans 3+ layers ·
-repo couldn't be inspected · sized > 13 (auto-blocked, must split).
+sized > 13 (auto-blocked, must split) · it's a `desc-only` card that sized ≥ 5 (a quick
+estimate of something non-trivial should get a developer's eyes before it's committed).
 
 ### 7. Confirm before publishing
 Show the breakdown as a numbered list. Ask: granularity right (too coarse / too fine)?
