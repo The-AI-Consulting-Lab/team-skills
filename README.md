@@ -7,16 +7,34 @@ so the team stays in sync instead of each repo carrying its own drifting copy.
 ## What's here
 
 ```
-methods/        Reference docs — the "how we work" (project-agnostic)
-  estimation/   Sizing & delivery-forecasting method (story points + flow metrics)
-skills/         Installable Claude Code skills
+.claude-plugin/   Marketplace + plugin manifests (makes this repo installable)
+methods/          Reference docs — the "how we work" (project-agnostic)
+  estimation/     Sizing & delivery-forecasting method (story points + flow metrics)
+skills/           Installable Claude Code skills
   card-estimate/  Break a request into sized, ClickUp-ready cards
 ```
 
-## Install a skill
+## Install via the Claude Code marketplace (recommended)
+
+This repo is a Claude Code **plugin marketplace** (manifest at
+`.claude-plugin/marketplace.json`). Add it once, then install the plugin — Claude Code
+keeps it updated for you, on any machine.
+
+In an interactive `claude` session:
+
+```
+/plugin marketplace add The-AI-Consulting-Lab/team-skills
+/plugin install tacl-team-skills@team-skills
+```
+
+(Or use the **Settings → Plugins → Add marketplace** dialog and enter
+`The-AI-Consulting-Lab/team-skills`.) The skills then work in every project — e.g.
+`/tacl-team-skills:card-estimate`.
+
+## Install a single skill manually (alternative)
 
 Skills live in `~/.claude/skills/` (global — works in every project on your machine).
-To install one:
+To install one without the marketplace:
 
 ```bash
 # one-time: clone this repo somewhere
@@ -49,9 +67,10 @@ project's `anchors.md` for reference points, and publishes to ClickUp via the MC
 ## Adding a skill
 
 1. New folder under `skills/<name>/` with a `SKILL.md` (frontmatter: `name`,
-   `description`).
+   `description`). The marketplace auto-discovers it — no manifest edit needed.
 2. Keep it project-agnostic; put anything project-specific in the project repo.
-3. Add it to the index above, commit, push. Teammates `git pull` + symlink.
+3. Add it to the index above; bump `version` in `.claude-plugin/marketplace.json` and
+   `.claude-plugin/plugin.json` so installs pick it up. Commit, push.
 
 ## Conventions
 
