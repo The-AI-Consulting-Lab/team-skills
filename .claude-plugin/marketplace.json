@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace-manifest.json",
+  "name": "team-skills",
+  "description": "Shared Claude Code skills and engineering methods for The AI Consulting Lab.",
+  "version": "0.1.0",
+  "owner": {
+    "name": "The AI Consulting Lab",
+    "email": "info@theaiconsultinglab.com"
+  },
+  "plugins": [
+    {
+      "name": "tacl-team-skills",
+      "source": ".",
+      "description": "TACL house skills: estimate and break down work into sized, ClickUp-ready cards using the team's Fibonacci + flow-metrics method.",
+      "version": "0.1.0",
+      "author": {
+        "name": "The AI Consulting Lab",
+        "email": "info@theaiconsultinglab.com"
+      },
+      "homepage": "https://github.com/The-AI-Consulting-Lab/team-skills",
+      "repository": "https://github.com/The-AI-Consulting-Lab/team-skills",
+      "keywords": ["estimation", "story-points", "clickup", "planning"]
+    }
+  ]
+}
