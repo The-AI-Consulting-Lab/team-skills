@@ -35,7 +35,8 @@ REQUEST:
      or depends on a missing answer/asset.
    - Complexity and Volume (FROM THE CODE — grep/read the repo for the files and
      layers the card touches; derive from the real fan-out, not the wording). If you
-     can't inspect the repo, set Confidence: Low.
+     can't inspect the repo, tag the card `desc-only` and cap Confidence at Medium
+     (not Low — Low is its own routing trigger and would route every card of the run).
    Security-sensitive code (auth, RLS/authz, privileged keys, storage, migrations) →
    Complexity ≥ 2, Confidence ≤ Medium.
 
@@ -52,14 +53,17 @@ REQUEST:
      feature (default) → Type + all 8 fields below
      spike             → Type, Description, Acceptance criteria, Timebox — NO points
      bug (unplanned)   → Type, Description, Acceptance criteria — NO points
-   ## <title — verb + object>
+   (This block is character-identical to step 6 of the card-estimate skill. If you
+   change one, change both — two spellings of one schema is how they drift apart.)
+   ## <Card title — verb + object>
    - Type: feature
-   - Story Points: <n>  Confidence: <H/M/L>
-   - Sizing: U/C/V → n (nearest reference: "<anchor>")
-   - Touches: <files/layers, or "not inspected">
+   - Story Points: <Fib>   Confidence: <High|Medium|Low>
+   - Sizing: U=<1-3> C=<1-3> V=<1-3> → <Fib>  (nearest reference: "<anchor>")
+   - Touches: <files/layers found in the repo, or "not inspected">
    - Description: <2-4 plain sentences anyone can read>
-   - Acceptance criteria: <checkboxes; each observable and testable — a reader can tell
-     pass from fail without asking. "Works reliably" is not an acceptance criterion.>
+   - Acceptance criteria:
+     - [ ] <observable, testable outcome — a reader can tell pass from fail without
+           asking. "Works reliably" is not an acceptance criterion.>
    - Why this size might be wrong: <the one blind spot>
    - Assumptions / Risks / Depends on: <…>
    - Definition of Done: standard (build + checks + hand-test + review + bug-fix + AC)
