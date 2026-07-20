@@ -12,6 +12,7 @@ methods/          Reference docs — the "how we work" (project-agnostic)
   estimation/     Sizing & delivery-forecasting method (story points + flow metrics)
 skills/           Installable Claude Code skills
   card-estimate/  Break a request into sized, ClickUp-ready cards
+  transcribe/     Turn a video URL (call recording, YouTube, …) into text
 ```
 
 ## Install via the Claude Code marketplace (recommended)
