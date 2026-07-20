@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "transcribe",
+  "displayName": "Transcribe",
+  "version": "0.1.0",
+  "description": "Transcribe video from any URL (YouTube, Instagram, X/Twitter, TikTok, Facebook, Vimeo, etc.) into text using yt-dlp and faster-whisper. Supports 1000+ sites, no API keys required.",
+  "author": {
+    "name": "The AI Consulting Lab",
+    "email": "info@theaiconsultinglab.com"
+  },
+  "homepage": "https://github.com/The-AI-Consulting-Lab/team-skills",
+  "repository": "https://github.com/The-AI-Consulting-Lab/team-skills",
+  "license": "MIT",
+  "keywords": ["transcription", "video", "yt-dlp", "whisper"]
+}

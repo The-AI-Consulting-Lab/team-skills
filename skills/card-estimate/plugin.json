@@ -1,9 +1,9 @@
 {
   "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
-  "name": "tacl-team-skills",
-  "displayName": "TACL Team Skills",
+  "name": "card-estimate",
+  "displayName": "Card Estimate",
   "version": "0.1.0",
-  "description": "Shared TACL house skills. Includes card-estimate: break a feature request into sized, ClickUp-ready cards using Fibonacci story points and flow-metrics forecasting.",
+  "description": "Break a feature request into sized, ClickUp-ready cards using the TACL house method: Fibonacci story points for sizing, flow metrics for forecasting.",
   "author": {
     "name": "The AI Consulting Lab",
     "email": "info@theaiconsultinglab.com"
