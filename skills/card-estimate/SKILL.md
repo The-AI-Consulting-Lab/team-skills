@@ -97,8 +97,26 @@ write it to the card.
 
 ### 6. Emit one block per card (exact shape)
 
+**Every field, every card. A missing field is a failed card, not a terse one.** If a
+field has nothing to say, write what makes it empty (`Depends on: nothing`) — never drop
+the line. Omission is the measured failure mode of this skill: a real run emitted 1 of
+these 8 fields as specified, and the four it dropped were the four that carry the risk.
+
+Card types — the required set differs, so name the type first:
+
+| `Type` | Required | Never |
+| --- | --- | --- |
+| `feature` (default) | all 8 fields below | Time Estimate |
+| `spike` | Type, Description, Acceptance criteria, Timebox | Story Points, Time Estimate |
+| `bug` (unplanned) | Type, Description, Acceptance criteria | Story Points, Time Estimate |
+
+Spikes and unplanned bugs carry **no points** (`methods/estimation`: spikes are
+timeboxed; unplanned bugs are interruptions counted in throughput). Don't invent a point
+value to make a card look complete.
+
 ```
 ## <Card title — verb + object>
+- Type: feature
 - Story Points: <Fib>   Confidence: <High|Medium|Low>
 - Sizing: U=<1-3> C=<1-3> V=<1-3> → <Fib>  (nearest reference: "<anchor>")
 - Touches: <files/layers found in the repo, or "not inspected">
@@ -126,7 +144,33 @@ Show the breakdown as a numbered list. Ask: granularity right (too coarse / too 
 dependencies correct? split or merge any? Iterate until approved. **Never publish
 unapproved cards.**
 
-### 8. Publish to ClickUp
+### 8. Self-check — before a single card is created
+
+**Nothing enforces this but you.** There is no validator and no hook; the only gate is
+this step actually being run. It is skipped exactly when it matters most — a long
+thread, no repo, a hurry. Run it anyway.
+
+Print this table, one row per card, filled in. Printing it is the check; a table you
+did not write out is a table you did not run.
+
+| Card | Type | Points | Sizing+ref | Touches | Desc | AC | Why-wrong | Assum/Depends | DoD |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+
+Then confirm, in writing:
+
+- [ ] Every `feature` card has all 8 fields. Spikes/bugs have their required set and **no points**.
+- [ ] Every `Sizing:` line ends with `(nearest reference: "<anchor>")`.
+- [ ] Every `Touches:` says real files/layers, or literally `not inspected`.
+- [ ] Every AC is **observable and testable** — a reader could tell pass from fail without asking. "Works reliably" is not an acceptance criterion.
+- [ ] Every `Why this size might be wrong:` names a real blind spot, not a hedge.
+- [ ] Repo not inspected → every card tagged `desc-only`, Confidence ≤ Medium.
+- [ ] Routing triggers applied and listed in the footer — including `desc-only` **and** sized ≥ 5.
+- [ ] No card carries a time value anywhere. Not in a field, not in the body, not as a "provisional band."
+
+If a row is incomplete, **fix the card — do not publish and fix later.** Cards are read
+by whoever picks up the work; an incomplete card has already done its damage by then.
+
+### 9. Publish to ClickUp
 For each approved card: `clickup_create_task` in the matching List, set the **Story
 Points** custom field (field id from the project's anchors.md), and put Description +
 Acceptance criteria in the body. **Do not set the native Time Estimate** — time is
