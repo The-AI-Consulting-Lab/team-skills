@@ -234,7 +234,11 @@ committed if *any* of these is true:**
 - it touches a security-sensitive area (auth, RLS, privileged keys, storage,
   migrations)
 - it spans 3+ layers
-- the repo couldn't be inspected to score Volume / Complexity
+- it's a `desc-only` card (repo not inspected) that sized ≥ 5 — a quick estimate of
+  something non-trivial should get a developer's eyes before it's committed. Routing
+  *every* card of a desc-only run is over-routing and helps nobody.
+- it's a spike or unplanned bug in a security-sensitive area, or one whose outcome
+  decides another card's size (unpointed cards can't trip a points threshold)
 - it sized to > 13 (this is auto-blocked — break it down first)
 
 Every estimated card should also carry a one-line **"why this size might be

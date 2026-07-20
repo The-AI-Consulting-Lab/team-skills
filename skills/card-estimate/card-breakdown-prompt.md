@@ -46,21 +46,36 @@ REQUEST:
    not typing speed.
 
 5. OUTPUT one block per card. Emit EVERY field — a missing field is a failed card,
-   not a terse one. Do NOT write any time value onto a card (see step 7).
+   not a terse one. If a field has nothing to say, write what makes it empty
+   ("Depends on: nothing"); never drop the line.
+   Type comes first and decides which fields are required:
+     feature (default) → Type + all 8 fields below
+     spike             → Type, Description, Acceptance criteria, Timebox — NO points
+     bug (unplanned)   → Type, Description, Acceptance criteria — NO points
    ## <title — verb + object>
+   - Type: feature
    - Story Points: <n>  Confidence: <H/M/L>
    - Sizing: U/C/V → n (nearest reference: "<anchor>")
    - Touches: <files/layers, or "not inspected">
    - Description: <2-4 plain sentences anyone can read>
-   - Acceptance criteria: <checkboxes; each observable and testable>
+   - Acceptance criteria: <checkboxes; each observable and testable — a reader can tell
+     pass from fail without asking. "Works reliably" is not an acceptance criterion.>
    - Why this size might be wrong: <the one blind spot>
    - Assumptions / Risks / Depends on: <…>
    - Definition of Done: standard (build + checks + hand-test + review + bug-fix + AC)
+   NO delivery time on any card — not a band, not an hour figure. A spike's Timebox
+   (e.g. 4h) is the sole exception and appears only on a spike.
    If the repo could not be inspected, tag the card `desc-only` and cap Confidence at
    Medium.
-   Footer — Route to a developer before commit if ANY: points ≥ 8, Confidence Low,
-   security area, 3+ layers, repo not inspected, a `desc-only` card that sized ≥ 5,
-   or > 13 (must split).
+   Before accepting a 5: if the card involves reliability/offline/cellular behavior, a
+   security area, an unresolved design choice, or a broad verification surface, re-check
+   it against the 8 and 13 anchors first. 5 is the most over-used number on this scale.
+   Footer — Totals: <sum of pointed cards> pts, plus <n> unpointed (spikes/bugs, never
+   folded into the total).
+   Route to a developer before commit if ANY: points ≥ 8, Confidence Low, security area,
+   3+ layers, a `desc-only` card that sized ≥ 5, or > 13 (must split). Unpointed cards
+   can't trip a points threshold — route any spike or bug in a security area or whose
+   outcome decides another card's size.
 
 6. Ask whether the granularity and dependencies are right BEFORE anything is created.
 ```
@@ -70,9 +85,12 @@ REQUEST:
 ## Publishing
 
 With the skill + ClickUp MCP, cards are created automatically in the right List. By
-hand: paste each block into a ClickUp task and put the point value in the **Story
-Points** custom field (or in the card body if the project hasn't created that field
-yet). Find the target List in the project's `anchors.md` — do not hardcode an ID.
+hand: paste **the whole block** into the ClickUp task description — not a summary of it;
+the fields people trim are the ones carrying the risk. Put the point value in the
+**Story Points** custom field (or in the card body if the project hasn't created that
+field yet), and **leave Story Points blank on spikes and unplanned bugs** — a blank
+there is correct, an invented number is not. Tag spikes `spike` and unplanned bugs
+`bug`. Find the target List in the project's `anchors.md` — do not hardcode an ID.
 
 **Leave the native Time Estimate empty.** Time is forecast in aggregate from flow
 (cycle time + throughput), never assigned per card. The cold-start bands in
