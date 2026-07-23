@@ -13,6 +13,7 @@ methods/          Reference docs — the "how we work" (project-agnostic)
 skills/           Installable Claude Code skills
   card-estimate/  Break a request into sized, ClickUp-ready cards
   transcribe/     Turn a video URL (call recording, YouTube, …) into text
+  release-notes/  Cut a release: changelog + client note (branded .docx) + tag
 ```
 
 ## Install via the Claude Code marketplace (recommended)

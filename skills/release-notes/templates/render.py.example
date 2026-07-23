@@ -1,0 +1,151 @@
+#!/usr/bin/env python3
+"""Render a release note (markdown) as a Word document. PORTABLE STARTING POINT.
+
+This is the release pipeline's *render* stage. The pipeline knows nothing about Python
+or your repo: it looks for exactly one executable ``scripts/release/render.*`` and calls
+it with a fixed contract.
+
+    scripts/release/render.py --in NOTES.md --out DOC.docx --title "..." [--date YYYY-MM-DD] [--logo PATH]
+
+    exit 0        the document at --out is the deliverable
+    exit non-zero the pipeline warns, keeps the markdown, and does NOT abort.
+                  A broken renderer must never cost you the release note.
+
+Unlike a project's in-app renderer, this file imports NOTHING from a repo — it depends
+only on python-docx (`pip install python-docx`). Copy it to `scripts/release/render.py`,
+drop your logo in via `--logo`, adjust the accent colour below, and you have branded
+release docs with no app wiring. A project that already has a markdown->docx renderer in
+its codebase (e.g. an in-app "Download as Word") should call that instead, so the release
+note looks like every other document the client receives.
+
+It handles the shape release notes actually take: `#`/`##`/`###` headings, `-`/`*`
+bullets, `**bold**` inline, and plain paragraphs separated by blank lines. It is not a
+general markdown engine (no tables, no nested lists) — release notes do not need one, and
+keeping it small keeps it trustworthy.
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+from datetime import date
+from pathlib import Path
+
+# --- Branding. Change these two lines per project; that is the whole customisation. ---
+ACCENT_RGB = (0x3A, 0x9E, 0x99)  # headings + title. Pick a colour with contrast on white.
+ORG_NAME = ""  # e.g. "The AI Consulting Lab"; blank to omit the header text line.
+
+
+def _fail(msg: str, code: int = 2) -> int:
+    print(f"error: {msg}", file=sys.stderr)
+    return code
+
+
+def _add_inline(paragraph, text: str) -> None:
+    """Render a single line of inline markdown: **bold** and `code`. Everything else literal."""
+    for chunk in re.split(r"(\*\*.+?\*\*|`.+?`)", text):
+        if not chunk:
+            continue
+        if chunk.startswith("**") and chunk.endswith("**"):
+            paragraph.add_run(chunk[2:-2]).bold = True
+        elif chunk.startswith("`") and chunk.endswith("`"):
+            run = paragraph.add_run(chunk[1:-1])
+            run.font.name = "Consolas"
+        else:
+            paragraph.add_run(chunk)
+
+
+def _render(text: str, title: str, generated_on: date, logo: Path | None):
+    from docx import Document
+    from docx.shared import Pt, RGBColor
+
+    accent = RGBColor(*ACCENT_RGB)
+    doc = Document()
+
+    # Header: optional logo, optional org name.
+    if logo and logo.is_file():
+        try:
+            from docx.shared import Inches
+            doc.sections[0].header.paragraphs[0].add_run().add_picture(str(logo), width=Inches(1.6))
+        except Exception:  # a bad logo must never fail the render
+            pass
+    if ORG_NAME:
+        run = doc.sections[0].header.add_paragraph().add_run(ORG_NAME)
+        run.font.size = Pt(9)
+        run.font.color.rgb = accent
+
+    # Title + date stamp.
+    h = doc.add_heading(title, level=0)
+    for run in h.runs:
+        run.font.color.rgb = accent
+    stamp = doc.add_paragraph()
+    stamp_run = stamp.add_run(f"Generated {generated_on.isoformat()}")
+    stamp_run.italic = True
+    stamp_run.font.size = Pt(9)
+
+    # Body. Skip a leading H1 if it just repeats the title.
+    lines = text.splitlines()
+    for raw in lines:
+        line = raw.rstrip()
+        if not line.strip():
+            continue
+        m = re.match(r"^(#{1,6})\s+(.*)$", line)
+        if m:
+            level = len(m.group(1))
+            heading_text = m.group(2).strip()
+            if level == 1 and heading_text.lower() == title.lower():
+                continue  # renderer already supplied the title
+            hp = doc.add_heading(level=min(level, 4))
+            _add_inline(hp, heading_text)
+            for run in hp.runs:
+                run.font.color.rgb = accent
+            continue
+        bullet = re.match(r"^\s*[-*]\s+(.*)$", line)
+        if bullet:
+            p = doc.add_paragraph(style="List Bullet")
+            _add_inline(p, bullet.group(1).strip())
+            continue
+        p = doc.add_paragraph()
+        _add_inline(p, line.strip())
+
+    return doc
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Render a release note as a .docx")
+    ap.add_argument("--in", dest="src", required=True, type=Path)
+    ap.add_argument("--out", dest="dst", required=True, type=Path)
+    ap.add_argument("--title", default="Release Notes")
+    ap.add_argument("--date", dest="generated_on", default=None, help="ISO date stamped on the doc")
+    ap.add_argument("--logo", dest="logo", default=None, type=Path, help="optional header logo image")
+    args = ap.parse_args()
+
+    if not args.src.is_file():
+        return _fail(f"no such file: {args.src}")
+    text = args.src.read_text(encoding="utf-8")
+    if not text.strip():
+        return _fail("release note is empty — refusing to render a blank document")
+
+    if args.generated_on:
+        try:
+            generated_on = date.fromisoformat(args.generated_on)
+        except ValueError:
+            return _fail(f"--date must be ISO 8601 (YYYY-MM-DD); got {args.generated_on!r}")
+    else:
+        generated_on = date.today()
+
+    try:
+        doc = _render(text, args.title, generated_on, args.logo)
+    except ImportError:
+        return _fail("python-docx is not installed. `pip install python-docx`, or let the "
+                     "pipeline fall back to markdown.")
+
+    args.dst.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(str(args.dst))
+    print(f"{args.dst}  ({args.dst.stat().st_size:,} bytes)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

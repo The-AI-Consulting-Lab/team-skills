@@ -1,0 +1,75 @@
+# Release curation — <PROJECT>
+
+Read by the release pipeline when drafting the **client** release note. It carries routing,
+not judgement: what the client can see, what they call it, and what must never leave the
+building. The judgement — what actually matters this release, and what to leave out — is the
+human's, every time.
+
+Owner: whoever runs the release.
+
+> **This file is incomplete on purpose.** The sections marked TODO are the ones nobody can
+> infer from the codebase — they are how the client speaks, not how the system is built. The
+> pipeline is instructed to _ask_ rather than guess, so leaving a TODO here is safe. Guessing
+> is what is not.
+
+## Project facts (measured, not assumed)
+
+Fill these once, by measuring — do not assume. The commands are in the skill's setup section.
+
+|                      |                                                          |
+| -------------------- | -------------------------------------------------------- |
+| Release line         | TODO — the branch most merged PRs target (detect it)     |
+| Prod branch          | TODO — usually `main`                                    |
+| Deploys              | TODO — what auto-deploys from which branch               |
+| Conventional commits | TODO — % of the last 100 (below ~80% means noisy "Other")|
+| Tags                 | TODO — none yet means the first release uses bootstrap   |
+
+## Product vocabulary
+
+The client does not use our nouns. Translate.
+
+**TODO — fill this in with the operator before the first client note.** One row per term the
+client would not recognise: internal view names, table names, endpoints and jargon on the
+left; the words the client actually says on the right.
+
+| We say                         | They say                       |
+| ------------------------------ | ------------------------------ |
+| TODO internal name             | TODO what the client calls it  |
+
+Never put a table name, a column name, a file path, an endpoint or a PR number in the client
+note.
+
+## Client-visible
+
+Work under these paths is a candidate for the client note. Being here does not make it a
+story — it makes it worth _considering_.
+
+**TODO — list the paths the client actually sees or operates.** For example:
+
+- `app/**` / `frontend/**` — the pages and flows they use
+- `.../api/**` — new capability exposed to the app
+- worker/background paths — only where they change what the client observes
+
+## Internal only
+
+Real work. Not a client story. Keep it in `CHANGELOG.md`.
+
+- `test/**`, `.github/**`, `scripts/**`
+- Refactors, dependency bumps, CI, lint, type fixes
+- Anything whose value is "the code is now easier to work on"
+
+## Operational notes → the technical changelog, never the client note
+
+Migrations that need a manual apply, new environment variables, and anything that changes how
+prod is deployed. That belongs in `CHANGELOG.md` where an engineer will look for it — not in a
+document being handed to the client.
+
+## Never leaves the building
+
+Fed to the REDACT gate as extra patterns, on top of its built-in credential deny-list. One
+per line, plain substrings.
+
+**TODO — add the shared-infra identifiers and internal system names for this project.**
+Database/project ids, service hostnames, third-party system names, internal API-key env-var
+names. The credential deny-list is built in on top of this — these are the project-specific
+terms it cannot know about.
