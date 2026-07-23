@@ -54,6 +54,10 @@ Supplied by the project, all optional — a repo with none of them still gets a 
 | `scripts/release/render.*` | `templates/render.py.example` | Exactly one, executable, with a shebang. Produces the client document. Absent → markdown is the deliverable. |
 | `docs/release/curation.md` | `templates/curation.md.example` | Product vocabulary, client-visible paths, never-leaves-the-building terms. Absent → **ask the operator; do not guess.** |
 
+The **client note's shape** is not per-project — it is the TACL house format, in
+`templates/client-note.example.md`. Write every client note to that skeleton so notes read the
+same across clients (see *Draft* below).
+
 `render.py.example` is self-contained (only `python-docx`) and branded by editing two lines at
 its top — so a new repo gets branded release docs with no app wiring. A project that already
 has a markdown→docx renderer in its codebase should call that instead.
@@ -170,6 +174,23 @@ type. Use `curation.md`'s vocabulary. No table names, no file paths, no endpoint
 numbers. Cut every internal story: refactors, CI, evals, dependency bumps, test coverage. If a
 change's value is "the code is easier to work on", the client does not want to hear about it.
 
+**Write it to the house format** — `templates/client-note.example.md`. Every TACL client note
+has the same skeleton, so they read the same whichever client and whoever wrote them:
+
+- **Title + subtitle.** `<Product>: Release Notes`, then `RELEASED TO PRODUCTION · <date>`. The
+  subtitle and the confidential footer are rendered from the renderer's `--subtitle`/`--footer`
+  flags, not written into the body.
+- **Summary** — one plain paragraph: what the release is about, the before/after so the reader
+  knows why it matters, and that it is live.
+- **Capability sections** — one per area, grouped by what the client can now do. Two bullet
+  levels only: a **bold capability** in their words, then plain detail beneath it (indent the
+  nested bullets so the renderer nests them). Include "planned for later" notes where they apply.
+- **Bug Fixes** — same two-level shape; give the cause in one plain line only where it helps the
+  reader trust the fix.
+- **Worth Knowing** — the honest section: changes noted for completeness, what still needs live
+  validation, where feedback matters most, and a short feedback invite. This is where a caveat
+  goes instead of being buried or dropped.
+
 ### 4 — Redact
 
 Runs on both documents. **Aborts** — it never masks and continues.
@@ -191,8 +212,14 @@ Show them both documents. Say plainly what you might have got wrong. **Stop.**
 If `scripts/release/render.*` exists, call it:
 
 ```
-<the script> --in NOTES.md --out DOC.<ext> --title "..."
+<the script> --in NOTES.md --out DOC.<ext> --title "<Product>: Release Notes" \
+    --subtitle "RELEASED TO PRODUCTION · <date>" \
+    --footer "<CLIENT> · CONFIDENTIAL · PRODUCT UPDATE" --logo <letterhead>
 ```
+
+The subtitle and footer are the house format's chrome; pass them here rather than writing them
+into the markdown. A renderer that does not recognise a flag should ignore it, so these stay
+optional.
 
 Exit 0 → the document is the deliverable. **Non-zero → warn, keep the markdown, do not abort.**
 A broken renderer must never cost you the release note.
