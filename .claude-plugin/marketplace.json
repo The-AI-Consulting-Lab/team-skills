@@ -16,6 +16,11 @@
       "name": "transcribe",
       "source": "./skills/transcribe",
       "description": "Transcribe video from any URL (YouTube, Instagram, X/Twitter, TikTok, Facebook, Vimeo, etc.) into text using yt-dlp and faster-whisper."
+    },
+    {
+      "name": "release-notes",
+      "source": "./skills/release-notes",
+      "description": "Cut a release: the technical changelog, the client-facing release note as a branded Word doc, the git tag and the GitHub Release. Project-agnostic — shared logic, per-repo vocabulary and branding."
     }
   ]
 }

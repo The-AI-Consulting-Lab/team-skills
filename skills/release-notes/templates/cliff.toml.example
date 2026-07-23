@@ -1,0 +1,125 @@
+# git-cliff configuration — pinned to git-cliff 2.13.1
+#
+# Emits the TECHNICAL changelog (Keep a Changelog format) from conventional commits.
+# This is NOT the client release note: the client note is drafted by an agent from the PR
+# set and approved by a human. Two audiences, two documents.
+#
+# Rules and pipeline: the release-notes SKILL.md next to this template.
+#
+# The single most important setting in this file is `filter_commits = false`.
+# A silently dropped commit in a "what did we ship to prod" document is a correctness
+# bug, not a formatting one. Anything we don't recognise lands visibly in "Other".
+
+[changelog]
+header = """
+# Changelog
+
+All notable changes to this project are documented here.
+The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+"""
+
+body = """
+{% if version %}\
+## [{{ version | trim_start_matches(pat="v") }}] - {{ timestamp | date(format="%Y-%m-%d") }}
+{% else %}\
+## [Unreleased]
+{% endif %}\
+{% for group, commits in commits | group_by(attribute="group") %}
+
+### {{ group | striptags | trim | upper_first }}
+{% for commit in commits %}
+- {{ commit.message | upper_first | trim }}\
+{% endfor %}
+{% endfor %}\n
+"""
+
+footer = """
+"""
+
+trim = true
+
+[git]
+conventional_commits = true
+
+# Do NOT drop unparsed commits. They surface under "Other" so a human sees them.
+filter_commits = false
+
+# `filter_unconventional` governs COMMIT MESSAGE FORMAT, not merge commits. `false` keeps
+# commits that don't parse as Conventional Commits — which is the whole point here: a
+# Dependabot "Bump x from 1 to 2" is not conventional, and dropping it would hide a change
+# that has reached prod. Merge commits are NOT filtered anywhere in this config, by design:
+# if one ever reaches the prod branch (the workflow is squash-merge, so it shouldn't) it
+# lands visibly in "Other" rather than disappearing. Same rule as `filter_commits = false`.
+filter_unconventional = false
+
+protect_breaking_commits = true
+split_commits = false
+topo_order = false
+sort_commits = "oldest"
+
+# Strip the ClickUp card ids from the changelog body. They are internal routing, not
+# information a reader of the changelog needs. NOTE: they appear in two formats.
+commit_preprocessors = [
+  # "[86bat0hhn]" or "[86barydzv, 86bary8m5]"  →  removed
+  { pattern = '\s*\[86[a-z0-9]+(,\s*86[a-z0-9]+)*\]', replace = "" },
+  # "(#64, 86bapay9r)" → "(#64)"   (card id riding along with the PR number)
+  { pattern = ',\s*86[a-z0-9]+', replace = "" },
+  # "(86bafzr06)" on its own  →  removed
+  { pattern = '\s*\(86[a-z0-9]+\)', replace = "" },
+]
+
+# The `<!-- N -->` prefixes are NOT decoration. `group_by(attribute="group")` in the
+# template sorts groups ALPHABETICALLY (Tera's behaviour; git-cliff has no sort-order
+# option), which buried "Reverted" at the bottom — the exact opposite of the intent below.
+# The numeric HTML-comment prefix is git-cliff's documented workaround: it forces the
+# lexicographic sort into the order we want, and `| striptags` in the template removes it
+# before rendering. Keep the numbers single-digit and contiguous; `<!-- 10 -->` would sort
+# between 1 and 2 and quietly break the ordering again.
+commit_parsers = [
+  # --- Reverts: never silently collapsed. A revert of a shipped feature is the single
+  # most dangerous thing a naive changelog can hide. It gets its own visible group, first.
+  { message = "^[Rr]evert", group = "<!-- 0 -->Reverted" },
+
+  # --- Keep a Changelog categories, in Keep a Changelog's own order.
+  { message = "^feat", group = "<!-- 1 -->Added" },
+  { message = "^perf", group = "<!-- 2 -->Changed" },
+  { message = "^refactor", group = "<!-- 2 -->Changed" },
+
+  # `polish` is a non-standard type some repos use. If yours does, map it here rather
+  # than let it fall through to Other. Drop this line if you don't.
+  { message = "^polish", group = "<!-- 2 -->Changed" },
+  { message = "^style", group = "<!-- 2 -->Changed" },
+
+  { message = "^fix", group = "<!-- 3 -->Fixed" },
+  { message = "^sec(urity)?", group = "<!-- 4 -->Security" },
+
+  # --- Dependabot. Non-conventional by construction; grouped, never dropped, because
+  # dependency bumps have reached prod on their own (see D5 in the design doc).
+  # NOTE: scripts/release/pr_set.sh splits dependency PRs out of the client note using the
+  # same four patterns. The two lists must stay in sync — see the comment there.
+  { message = "^Bump ", group = "<!-- 5 -->Dependencies" },
+  { message = "^Update .* requirement", group = "<!-- 5 -->Dependencies" },
+  { message = "^chore\\(deps\\)", group = "<!-- 5 -->Dependencies" },
+  { message = "^chore\\(dependabot\\)", group = "<!-- 5 -->Dependencies" },
+
+  # --- Internal. Grouped rather than skipped: `skip = true` would hide them, and the
+  # template renders every group, so these DO appear in the technical changelog under
+  # `### Internal`. That is deliberate — docs/tests/CI are real work and belong in the
+  # engineer-facing record. The separate client-note curation step is what decides
+  # whether any of it reaches client material.
+  { message = "^docs", group = "<!-- 6 -->Internal" },
+  { message = "^test", group = "<!-- 6 -->Internal" },
+  { message = "^ci", group = "<!-- 6 -->Internal" },
+  { message = "^build", group = "<!-- 6 -->Internal" },
+  { message = "^chore", group = "<!-- 6 -->Internal" },
+
+  # --- Anything else. Visible on purpose.
+  { message = ".*", group = "<!-- 7 -->Other" },
+]
+
+# No [remote.github] section on purpose. The GitHub integration requires a token for a
+# private repo (it 404s without one), and it buys us nothing: our squash-merge commit
+# subjects already carry the PR number, e.g. "feat(assistant): ... (#79)". Keeping this
+# out means the pipeline needs no network and no credential — which is also what makes it
+# drop cleanly into another repo.

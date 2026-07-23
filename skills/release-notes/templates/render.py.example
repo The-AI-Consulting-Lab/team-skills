@@ -1,0 +1,209 @@
+#!/usr/bin/env python3
+"""Render a release note (markdown) as a Word document. PORTABLE STARTING POINT.
+
+This is the release pipeline's *render* stage. The pipeline knows nothing about Python
+or your repo: it looks for exactly one executable ``scripts/release/render.*`` and calls
+it with a fixed contract.
+
+    scripts/release/render.py --in NOTES.md --out DOC.docx --title "..." \
+        [--subtitle "RELEASED TO PRODUCTION · JULY 22, 2026"] \
+        [--footer "ACME · CONFIDENTIAL · PRODUCT UPDATE"] \
+        [--date YYYY-MM-DD] [--logo PATH]
+
+    exit 0        the document at --out is the deliverable
+    exit non-zero the pipeline warns, keeps the markdown, and does NOT abort.
+                  A broken renderer must never cost you the release note.
+
+Unlike a project's in-app renderer, this file imports NOTHING from a repo — it depends
+only on python-docx (`pip install python-docx`). Copy it to `scripts/release/render.py`,
+drop your logo in via `--logo`, set `--subtitle`/`--footer` per project, adjust the accent
+below, and you have branded release docs with no app wiring. A project that already has a
+markdown->docx renderer in its codebase (e.g. an in-app "Download as Word") should call
+that instead, so the release note looks like every other document the client receives.
+
+It handles the shape release notes actually take: `#`/`##`/`###` headings, two levels of
+`-`/`*` bullets (indent the nested ones), `**bold**` inline, and plain paragraphs. It is
+not a general markdown engine (no tables, no third-level nesting) — release notes do not
+need one, and keeping it small keeps it trustworthy. The two-level bullets match the house
+format: a bold capability, then its details.
+"""
+
+from __future__ import annotations
+
+import argparse
+import re
+import sys
+from datetime import date
+from pathlib import Path
+
+# --- Branding. Change these two lines per project; that is the whole customisation. ---
+ACCENT_RGB = (0x3A, 0x9E, 0x99)  # headings + title. Pick a colour with contrast on white.
+ORG_NAME = ""  # e.g. "The AI Consulting Lab"; blank to omit the header text line.
+
+
+def _fail(msg: str, code: int = 2) -> int:
+    print(f"error: {msg}", file=sys.stderr)
+    return code
+
+
+def _add_inline(paragraph, text: str) -> None:
+    """Render a single line of inline markdown: **bold** and `code`. Everything else literal."""
+    for chunk in re.split(r"(\*\*.+?\*\*|`.+?`)", text):
+        if not chunk:
+            continue
+        if chunk.startswith("**") and chunk.endswith("**"):
+            paragraph.add_run(chunk[2:-2]).bold = True
+        elif chunk.startswith("`") and chunk.endswith("`"):
+            run = paragraph.add_run(chunk[1:-1])
+            run.font.name = "Consolas"
+        else:
+            paragraph.add_run(chunk)
+
+
+def _render(text, title, generated_on, logo, subtitle, footer):
+    from docx import Document
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.shared import Inches, Pt, RGBColor
+
+    accent = RGBColor(*ACCENT_RGB)
+    muted = RGBColor(0x6B, 0x6B, 0x6B)
+    doc = Document()
+
+    # Page header: optional logo, optional org name.
+    if logo and logo.is_file():
+        try:
+            doc.sections[0].header.paragraphs[0].add_run().add_picture(str(logo), width=Inches(1.6))
+        except Exception:  # a bad logo must never fail the render
+            pass
+    if ORG_NAME:
+        run = doc.sections[0].header.add_paragraph().add_run(ORG_NAME)
+        run.font.size = Pt(9)
+        run.font.color.rgb = accent
+
+    # Page footer: the confidential / product-update line, centred and muted.
+    if footer:
+        fp = doc.sections[0].footer.paragraphs[0]
+        fp.alignment = WD_ALIGN_PARAGRAPH.CENTER
+        frun = fp.add_run(footer)
+        frun.font.size = Pt(8)
+        frun.font.color.rgb = muted
+
+    # Title, then the subtitle line ("RELEASED TO PRODUCTION · <date>") if given, else a
+    # plain "Generated <date>" stamp. The house format uses the subtitle, not the stamp.
+    h = doc.add_heading(title, level=0)
+    for run in h.runs:
+        run.font.color.rgb = accent
+    sub = doc.add_paragraph()
+    if subtitle:
+        srun = sub.add_run(subtitle)
+        srun.font.size = Pt(9)
+        srun.font.color.rgb = muted
+    else:
+        srun = sub.add_run(f"Generated {generated_on.isoformat()}")
+        srun.italic = True
+        srun.font.size = Pt(9)
+
+    # Body. Markdown rule this honours: a blank line separates blocks, but a soft-wrapped
+    # line continues the block above it. So text and bullets are BUFFERED and only flushed on
+    # a blank line, a heading, or the next bullet — otherwise a wrapped paragraph would render
+    # as several paragraphs and a wrapped bullet continuation would drop out of its list.
+    para_buf: list[str] = []
+    bullet_buf = None  # (style, text) for the bullet currently accumulating continuations
+
+    def flush_para() -> None:
+        nonlocal para_buf
+        if para_buf:
+            _add_inline(doc.add_paragraph(), " ".join(para_buf))
+            para_buf = []
+
+    def flush_bullet() -> None:
+        nonlocal bullet_buf
+        if bullet_buf is not None:
+            _add_inline(doc.add_paragraph(style=bullet_buf[0]), bullet_buf[1])
+            bullet_buf = None
+
+    sub_norm = subtitle.strip().lower() if subtitle else None
+    for raw in text.splitlines():
+        line = raw.rstrip()
+        stripped = line.strip()
+        if not stripped:  # blank line ends whatever block was open
+            flush_bullet()
+            flush_para()
+            continue
+        m = re.match(r"^(#{1,6})\s+(.*)$", line)
+        if m:
+            flush_bullet()
+            flush_para()
+            level = len(m.group(1))
+            heading_text = m.group(2).strip()
+            if level == 1 and heading_text.lower() == title.lower():
+                continue  # renderer already supplied the title
+            hp = doc.add_heading(level=min(level, 4))
+            _add_inline(hp, heading_text)
+            for run in hp.runs:
+                run.font.color.rgb = accent
+            continue
+        # The subtitle line, if written into the body, is chrome the renderer already drew.
+        if sub_norm and stripped.lower() == sub_norm:
+            continue
+        bullet = re.match(r"^(\s*)[-*]\s+(.*)$", line)
+        if bullet:
+            flush_bullet()
+            flush_para()
+            # Indented bullet -> nested level. Two levels is all the house format uses.
+            indent = len(bullet.group(1).expandtabs(4))
+            style = "List Bullet 2" if indent >= 2 else "List Bullet"
+            bullet_buf = (style, bullet.group(2).strip())
+            continue
+        # An indented line under an open bullet is that bullet's wrapped continuation.
+        if bullet_buf is not None and re.match(r"^\s+\S", raw):
+            bullet_buf = (bullet_buf[0], f"{bullet_buf[1]} {stripped}")
+            continue
+        # Otherwise it is paragraph text; accumulate so soft-wraps coalesce.
+        flush_bullet()
+        para_buf.append(stripped)
+
+    flush_bullet()
+    flush_para()
+    return doc
+
+
+def main() -> int:
+    ap = argparse.ArgumentParser(description="Render a release note as a .docx")
+    ap.add_argument("--in", dest="src", required=True, type=Path)
+    ap.add_argument("--out", dest="dst", required=True, type=Path)
+    ap.add_argument("--title", default="Release Notes")
+    ap.add_argument("--subtitle", default=None, help='e.g. "RELEASED TO PRODUCTION · JULY 22, 2026"')
+    ap.add_argument("--footer", default=None, help='e.g. "ACME · CONFIDENTIAL · PRODUCT UPDATE"')
+    ap.add_argument("--date", dest="generated_on", default=None, help="ISO date; used only if no --subtitle")
+    ap.add_argument("--logo", dest="logo", default=None, type=Path, help="optional header logo image")
+    args = ap.parse_args()
+
+    if not args.src.is_file():
+        return _fail(f"no such file: {args.src}")
+    text = args.src.read_text(encoding="utf-8")
+    if not text.strip():
+        return _fail("release note is empty — refusing to render a blank document")
+
+    if args.generated_on:
+        try:
+            generated_on = date.fromisoformat(args.generated_on)
+        except ValueError:
+            return _fail(f"--date must be ISO 8601 (YYYY-MM-DD); got {args.generated_on!r}")
+    else:
+        generated_on = date.today()
+
+    try:
+        doc = _render(text, args.title, generated_on, args.logo, args.subtitle, args.footer)
+    except ImportError:
+        return _fail("python-docx is not installed. `pip install python-docx`, or let the "
+                     "pipeline fall back to markdown.")
+
+    args.dst.parent.mkdir(parents=True, exist_ok=True)
+    doc.save(str(args.dst))
+    print(f"{args.dst}  ({args.dst.stat().st_size:,} bytes)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

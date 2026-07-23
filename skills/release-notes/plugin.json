@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-plugin-manifest.json",
+  "name": "release-notes",
+  "displayName": "Release Notes",
+  "version": "0.1.0",
+  "description": "Cut a release: the technical changelog, the client-facing release note (as a branded Word doc), the git tag and the GitHub Release. Project-agnostic; logic is shared, vocabulary and branding are per-repo.",
+  "author": {
+    "name": "The AI Consulting Lab",
+    "email": "info@theaiconsultinglab.com"
+  },
+  "homepage": "https://github.com/The-AI-Consulting-Lab/team-skills",
+  "repository": "https://github.com/The-AI-Consulting-Lab/team-skills",
+  "license": "MIT",
+  "keywords": ["release", "changelog", "release-notes", "git-cliff", "docx"]
+}
